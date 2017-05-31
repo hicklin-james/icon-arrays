@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, Inject, ViewContainerRef } from '@angular/core';
 import * as d3 from 'd3';
+import * as FileSaver from 'file-saver';
 
 @Component({
   selector: 'app-icon-array-chart',
@@ -14,13 +15,18 @@ export class IconArrayChartComponent implements OnInit {
   @Input() width: number;
   @Input() data: any[];
   @Input() iconPadding: number;
+  @Input() randomDistribution: boolean;
+  @Input() chartTitle: string;
+  height: number;
   canvas: any;
   chart: any;
   legend: any;
   legendItems: any;
   legendElements: any;
   textBorderPadding: number = 3;
+  titleHeight: number = 40;
 
+  title: any;
   people: any;
   peopleItems: any;
   chartData: any[] = Array();
@@ -178,6 +184,9 @@ export class IconArrayChartComponent implements OnInit {
     this.canvas = wrapper.select('#icon-array-preview')
     this.chart = this.canvas.append("g").attr("class", 'chart-body');
 
+    this.title = this.canvas.append("text")
+      .attr("class", "chart-title");
+
     this.legend = this.canvas.append('g')
       .attr('class', 'chart-legend')
       .attr('transform', 'translate(1,0)');
@@ -208,7 +217,39 @@ export class IconArrayChartComponent implements OnInit {
     this.updateChart();
   }
 
-  modifyExistingData() {
+  modifyDataWithDistribution() {
+    //var counters = this.data.map((p) => { return p.frequency});
+    //counters.slice(-1);
+    //var def = this.data[this.data.length-1];
+
+    var clonedArray = Array.apply(null, {length: 100}).map(Number.call, Number)
+
+    // for (var k = 0; k < 100; k++) {
+    //   clonedArray[k].color = def.color;
+    // }
+
+    var s = 0;
+
+    for (var i = 0; i < this.data.length; i++) {
+      let d = this.data[i];
+      for (var j = 0; j < d.frequency; j++) {
+        // select a random spot in the 100
+        //console.log(clonedArray.length);
+        var rand = Math.floor(Math.random() * clonedArray.length);
+        var randIndex = clonedArray[rand];
+
+        // set color of this index
+        this.chartData[randIndex].color = d.color;
+
+        clonedArray[rand] = clonedArray[clonedArray.length-1];
+        clonedArray.pop();
+        //clonedArray.splice(-1, 1);
+        s++;
+      }
+    }
+  }
+
+  modifyDataNoDistribution() {
     var j = 0;
     var dataCounter = 0;
     for (var i = 0; i < this.chartData.length; i++) {
@@ -223,6 +264,15 @@ export class IconArrayChartComponent implements OnInit {
         i--;
       }
 
+    }
+  }
+
+  modifyExistingData() {
+    if (this.randomDistribution) {
+      this.modifyDataWithDistribution()
+    }
+    else {
+      this.modifyDataNoDistribution();
     }
   }
 
@@ -255,12 +305,6 @@ export class IconArrayChartComponent implements OnInit {
     this.legendElements.append("text")
       .attr('alignment-baseline', 'middle')
       .style("font-size", "0.9em");
-
-    console.log(this.legendElements);
-     // this.people = this.peopleItems.enter()
-     //   .append("g");
-     // this.people.append("circle")
-     // this.people.append("path")
 
     this.updateChart();
   }
@@ -295,7 +339,7 @@ export class IconArrayChartComponent implements OnInit {
         return d.label;
       });
 
-    var totalLegendHeight = r;
+    var totalLegendHeight = r + (this.chartTitle ? this.titleHeight : 0);
     this.legendItems
       .each((d,i) => {
         var textItem = d3.select(this.legendItems[0][i])
@@ -314,7 +358,6 @@ export class IconArrayChartComponent implements OnInit {
   }
 
   updateLegendItem(item, currLegendHeight, svgWidth, r, d) {
-    console.log(item);
     var text = item.select("text");
     var lines = this.wrap(text.node(), svgWidth - (1.75*r) - (4 * r) - (1.75 * r) - (2 * this.textBorderPadding) - 1, d.frequency + " " + d.label);
     var bounds = text.node().getBoundingClientRect();
@@ -347,6 +390,14 @@ export class IconArrayChartComponent implements OnInit {
 
     let vertPadding = 10;
     let height = (numRows * rowHeight) + totalLegendHeight + vertPadding;
+    this.height = height;
+
+    this.title.text(this.chartTitle)
+      .attr("stroke", "black")
+      .attr("stroke-width", "1px")
+      .attr("transform", (d, i) => {
+        return "translate(" + ((this.width / 2) - (this.title.node().getComputedTextLength() / 2)) + "," + (this.titleHeight / 2) + ")";
+      });
 
     this.canvas
       .attr("width", this.width + "px")
@@ -370,14 +421,43 @@ export class IconArrayChartComponent implements OnInit {
     this.peopleItems.exit().remove();
   }
 
-  // ngOnChanges() {
-  //   if (this.chart) this.updateChart();
-  // }
-
-  // sets up local vars
   ngOnInit() {
-    //this.initArrayItems();
     this.drawChart();
   }
 
+  getSvgString() {
+    var svgNode = this.canvas.node();
+    var serializer = new XMLSerializer();
+    var svgString = serializer.serializeToString(svgNode);
+    return svgString;
+  }
+
+  downloadChartHelper(callback) {
+    let svgString = this.getSvgString();
+    let imgsrc = 'data:image/svg+xml;base64,'+ btoa( decodeURIComponent( encodeURIComponent( svgString ) ) );
+    var canvas = document.createElement("canvas");
+    let context = canvas.getContext("2d");
+    canvas.width = this.width;
+    canvas.height = this.height;
+    var image = new Image();
+
+    image.onload = () => {
+      context.clearRect(0, 0, this.width, this.height);
+      context.drawImage(image, 0, 0, this.width, this.height);
+
+      canvas.toBlob((blob: any) => {
+        var filesize = Math.round(blob.length/1024) + ' KB';
+        if (callback) callback(blob, filesize);
+      });
+    }
+    image.src = imgsrc;
+  }
+
+  downloadChart() {
+    var saveCallback = (datablob, filesize) => {
+      FileSaver.saveAs( datablob, 'D3 vis exported to PNG.png' );
+    }
+
+    this.downloadChartHelper(saveCallback);
+  }
 }

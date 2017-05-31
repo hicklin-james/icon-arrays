@@ -4,15 +4,17 @@ import { IconArrayChartComponent } from './directives/icon-array-chart/icon-arra
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css', './styles/style.css']
+  styleUrls: ['./app.component.css']
 })
 
 export class AppComponent {
   iconsPerRow: number = 25;
   imageWidth: number = 800;
   iconPadding: number = 3.5;
+  randomDistribution: boolean = false;
   defaultColors: string[] = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', 
    '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'];
+  chartTitle: string = "Title for your icon array";
   dataPoints: any = [
     {
       frequency: 15,
@@ -40,6 +42,13 @@ export class AppComponent {
 
   changeSelected(point) {
     this.currSelected = point;
+  }
+
+  setRandomDistribution() {
+    this.randomDistribution = !this.randomDistribution;
+    // dunno why this is needed :S
+    this.iconArrayChart.randomDistribution = this.randomDistribution
+    this.iconArrayChart.updateData();
   }
 
   addDataPoint() {
