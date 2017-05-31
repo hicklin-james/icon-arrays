@@ -1,0 +1,383 @@
+import { Component, OnInit, Input, Inject, ViewContainerRef } from '@angular/core';
+import * as d3 from 'd3';
+
+@Component({
+  selector: 'app-icon-array-chart',
+  templateUrl: './icon-array-chart.component.html',
+  styleUrls: ['./icon-array-chart.component.css']
+})
+
+export class IconArrayChartComponent implements OnInit {
+
+  @Input() name: string;
+  @Input() itemsPerRow: number;
+  @Input() width: number;
+  @Input() data: any[];
+  @Input() iconPadding: number;
+  canvas: any;
+  chart: any;
+  legend: any;
+  legendItems: any;
+  legendElements: any;
+  textBorderPadding: number = 3;
+
+  people: any;
+  peopleItems: any;
+  chartData: any[] = Array();
+
+  constructor(private viewContainerRef: ViewContainerRef) { }
+
+  wrap(textItem, width, label) {
+    var text = d3.select(textItem);
+    var words = label.split(/\s+/).reverse();
+    var word = undefined;
+    var line = [];
+    var lineNumber = 0;
+    var lineHeight = 1.1;
+    var y = text.attr('y');
+    var x = text.attr('x');
+    var dy = text.attr('dy');
+    var tspan = text.text(null).append('tspan').attr('x', x).attr('y', y).attr('dy', dy + 'em');
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join("\ "));
+      var node: SVGTSpanElement = <SVGTSpanElement>tspan.node();
+      if (node.getComputedTextLength() > width) {
+        var w = line.pop();
+        var newText = line.join(" ");
+        tspan.text(newText);
+        line = [ w ];
+        tspan = text.append('tspan').attr('x', x).attr('y', y).attr('dy', ++lineNumber * lineHeight + dy + 'em').text(word);
+      }
+    }
+    return lineNumber + 1
+   }
+
+  drawPerson(headRadius, d3Item, color) {
+    let personWrapper = d3.select(d3Item);
+    let r = headRadius;
+    let headMidBottomX = r;
+    let headMidBottomY = r;
+    let head = personWrapper
+      .select('circle')
+      .attr('r', headRadius * 0.7)
+      .attr('cy', 1).attr('stroke-width', 1)
+
+    // top line
+    let bodyStartX = -r;
+    let bodyEndX = r;
+    let bodyStartY = headMidBottomY + r / 3;
+    // right shoulder curve
+    let rightShoulderXCurve1 = bodyEndX + r / 3;
+    let rightShoulderYCurve1 = bodyStartY;
+    let rightShoulderXCurve2 = bodyEndX + r / 3;
+    let rightShoulderYCurve2 = bodyStartY + r / 3;
+    let rightShoulderEndX = bodyEndX + r / 3;
+    let rightShoulderEndY = bodyStartY + r / 3;
+    // right arm outer line
+    let rightArmEndY = rightShoulderEndY + r * 2;
+    // right hand curve
+    let rhcx1 = rightShoulderEndX;
+    let rhcy1 = rightArmEndY + r / 3;
+    let rhcx2 = rightShoulderEndX - (r / 3);
+    let rhcy2 = rightArmEndY + r / 3;
+    let rhex = rightShoulderEndX - (r / 3);
+    let rhey = rightArmEndY;
+    // right arm inner line
+    let rightArmInnerEndY = rhey - (r * 2) + r / 2;
+    // right armpit curve
+    let racx1 = rhex;
+    let racy1 = rightArmInnerEndY - (r / 3);
+    let racx2 = rhex - (r / 2);
+    let racy2 = rightArmInnerEndY - (r / 3);
+    let racex = rhex - (r / 2);
+    let racey = rightArmInnerEndY;
+    // right leg outer line
+    let rightLegOuterEndY = racey + r * 4;
+    // right foot curve
+    let rfcx1 = racex;
+    let rfcy1 = rightLegOuterEndY + r / 3;
+    let rfcx2 = racex - (r / 3);
+    let rfcy2 = rightLegOuterEndY + r / 3;
+    let rfcex = racex - (r / 3);
+    let rfcey = rightLegOuterEndY;
+    // right inner leg
+    let rightInnerLegEndY = rfcey - (r * 2.6);
+    // crotch curve
+    let crx1 = rfcex;
+    let cry1 = rightInnerLegEndY - (r / 3);
+    let crx2 = -(r * 0.2);
+    let cry2 = rightInnerLegEndY - (r / 3);
+    let crex = -(r * 0.2);
+    let crey = rightInnerLegEndY;
+    // left inner leg
+    let leftInnerLegEndY = crey + r * 2.6;
+    // left foot curve
+    let lfcx1 = crex;
+    let lfcy1 = leftInnerLegEndY + r / 3;
+    let lfcx2 = crex - (r / 3);
+    let lfcy2 = leftInnerLegEndY + r / 3;
+    let lfcex = crex - (r / 3);
+    let lfcey = leftInnerLegEndY;
+    // left outer leg
+    let leftOuterLegEndY = rightArmInnerEndY;
+    // left armpit curve
+    let lacx1 = lfcex;
+    let lacy1 = leftOuterLegEndY - (r / 3);
+    let lacx2 = lfcex - (r / 2);
+    let lacy2 = leftOuterLegEndY - (r / 3);
+    let lacex = lfcex - (r / 2);
+    let lacey = leftOuterLegEndY;
+    // left inner arm
+    let leftInnerArmEndY = rightArmEndY;
+    // left hand curve
+    let lhx1 = lacex;
+    let lhy1 = leftInnerArmEndY + r / 3;
+    let lhx2 = lacex - (r / 3);
+    let lhy2 = leftInnerArmEndY + r / 3;
+    let lhex = lacex - (r / 3);
+    let lhey = leftInnerArmEndY;
+    // left arm outer
+    let leftOuterArmEndY = rightShoulderEndY;
+    // left shoulder curve
+    let lsx1 = lhex;
+    let lsy1 = leftOuterArmEndY - (r / 3);
+    let lsx2 = bodyStartX;
+    let lsy2 = bodyStartY;
+    let lsex = bodyStartX;
+    let lsey = bodyStartY;
+
+    let body = personWrapper.select('path').attr('d', () => {
+      var pathString = '';
+      pathString += 'M' + bodyStartX + ' ' + bodyStartY;
+      pathString += ' L ' + bodyEndX + ' ' + bodyStartY;
+      pathString += ' C ' + rightShoulderXCurve1 + ' ' + rightShoulderYCurve1 + ', ' + rightShoulderXCurve2 + ' ' + rightShoulderYCurve2 + ', ' + rightShoulderEndX + ' ' + rightShoulderEndY;
+      pathString += ' L ' + rightShoulderEndX + ' ' + rightArmEndY;
+      pathString += ' C ' + rhcx1 + ' ' + rhcy1 + ', ' + rhcx2 + ' ' + rhcy2 + ', ' + rhex + ' ' + rhey;
+      pathString += ' L ' + rhex + ' ' + rightArmInnerEndY;
+      pathString += ' C ' + racx1 + ' ' + racy1 + ', ' + racx2 + ' ' + racy2 + ', ' + racex + ' ' + racey;
+      pathString += ' L ' + racex + ' ' + rightLegOuterEndY;
+      pathString += ' C ' + rfcx1 + ' ' + rfcy1 + ', ' + rfcx2 + ' ' + rfcy2 + ', ' + rfcex + ' ' + rfcey;
+      pathString += ' L ' + rfcex + ' ' + rightInnerLegEndY;
+      pathString += ' C ' + crx1 + ' ' + cry1 + ', ' + crx2 + ' ' + cry2 + ', ' + crex + ' ' + crey;
+      pathString += ' L ' + crex + ' ' + leftInnerLegEndY;
+      pathString += ' C ' + lfcx1 + ' ' + lfcy1 + ', ' + lfcx2 + ' ' + lfcy2 + ', ' + lfcex + ' ' + lfcey;
+      pathString += ' L ' + lfcex + ' ' + leftOuterLegEndY;
+      pathString += ' C ' + lacx1 + ' ' + lacy1 + ', ' + lacx2 + ' ' + lacy2 + ', ' + lacex + ' ' + lacey;
+      pathString += ' L ' + lacex + ' ' + leftInnerArmEndY;
+      pathString += ' C ' + lhx1 + ' ' + lhy1 + ', ' + lhx2 + ' ' + lhy2 + ', ' + lhex + ' ' + lhey;
+      pathString += ' L ' + lhex + ' ' + leftOuterArmEndY;
+      pathString += ' C ' + lsx1 + ' ' + lsy1 + ', ' + lsx2 + ' ' + lsy2 + ', ' + lsex + ' ' + lsey;
+      return pathString;
+    }).attr('stroke-width', '1')
+  }
+
+  // draws initial chart - note that this is only called once
+  drawChart() {
+    let wrapper = d3.select(this.viewContainerRef.element.nativeElement);
+    this.canvas = wrapper.select('#icon-array-preview')
+    this.chart = this.canvas.append("g").attr("class", 'chart-body');
+
+    this.legend = this.canvas.append('g')
+      .attr('class', 'chart-legend')
+      .attr('transform', 'translate(1,0)');
+
+    var unflattenedData = this.data.map((outerData) => {return this.chunkData(outerData)});
+    this.chartData = [].concat.apply([], unflattenedData);
+
+    this.peopleItems = this.chart.selectAll("g")
+      .data(this.chartData, (d) => {return d.key});
+
+    this.legendItems = this.legend.selectAll("g")
+      .data(this.data, (d, i) => {return i});
+
+    this.people = this.peopleItems.enter()
+      .append("g");
+
+    // this.legendElements = this.legendItems.enter()
+    //   .append("g");
+
+    // this.legendElements.append("circle");
+    // this.legendElements.append("text")
+    //   .attr('alignment-baseline', 'middle')
+    //   .style("font-size", "0.9em");
+
+    this.people.append("circle")
+    this.people.append("path")
+
+    this.updateChart();
+  }
+
+  modifyExistingData() {
+    var j = 0;
+    var dataCounter = 0;
+    for (var i = 0; i < this.chartData.length; i++) {
+      let d = this.data[dataCounter];
+      if (j < d.frequency) {
+        this.chartData[i].color = d.color;
+        j++;
+      }
+      else {
+        j = 0;
+        dataCounter++;
+        i--;
+      }
+
+    }
+  }
+
+  chunkData(outerData) {
+    var chunkedData: any[] = Array();
+    //console.log(outerData);
+    for (var i = 0; i < outerData.frequency; i++) {
+      let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+      });
+      chunkedData.push({color: outerData.color, key: uuid})
+    }
+    return chunkedData;
+  }
+
+  updateData() {
+     // var unflattenedData = this.data.map((outerData) => {return this.chunkData(outerData)});
+     // this.chartData = [].concat.apply([], unflattenedData);
+     // this.peopleItems = this.people.data(this.chartData, (d) => {return d.key});
+    this.modifyExistingData();
+
+    this.legendItems = this.legend.selectAll("g")
+      .data(this.data, (d, i) => {return i});
+
+    this.legendElements = this.legendItems.enter()
+      .append("g")
+
+    this.legendElements.append("circle");
+    this.legendElements.append("text")
+      .attr('alignment-baseline', 'middle')
+      .style("font-size", "0.9em");
+
+    console.log(this.legendElements);
+     // this.people = this.peopleItems.enter()
+     //   .append("g");
+     // this.people.append("circle")
+     // this.people.append("path")
+
+    this.updateChart();
+  }
+
+  updateExistingItems() {
+    this.peopleItems.selectAll("path")
+      .transition().duration(500)
+      .attr("fill", (d) => {
+        return d.color
+      })
+      .attr("stroke", (d) => {
+        return d.color
+      })
+
+    this.peopleItems.selectAll("circle")
+      .transition().duration(500)
+      .ease("linear")
+      .attr("fill", (d) => {
+        return d.color
+      })
+      .attr("stroke", (d) => {
+        return d.color
+      })
+  }
+
+  updateExistingLegendItems(r) {
+    this.legendItems.select("text")
+      .attr("x", ((r * 2) + (1.75 * r) + this.textBorderPadding))
+      .attr("y", 0)
+      .attr("dy", 0)
+      .text((d, i) => {
+        return d.label;
+      });
+
+    var totalLegendHeight = r;
+    this.legendItems
+      .each((d,i) => {
+        var textItem = d3.select(this.legendItems[0][i])
+        totalLegendHeight += this.updateLegendItem(textItem, totalLegendHeight, this.width, r, d)
+      });
+
+    this.legendItems.select("circle")
+      .attr("r", r)
+      .attr("stroke-width", 1)
+      .attr("fill", (d) => {
+        return d.color
+      }).attr("stroke", (d) => {
+        return d.color
+      });
+    return totalLegendHeight;
+  }
+
+  updateLegendItem(item, currLegendHeight, svgWidth, r, d) {
+    console.log(item);
+    var text = item.select("text");
+    var lines = this.wrap(text.node(), svgWidth - (1.75*r) - (4 * r) - (1.75 * r) - (2 * this.textBorderPadding) - 1, d.frequency + " " + d.label);
+    var bounds = text.node().getBoundingClientRect();
+    var itemheight = parseInt(bounds.height);
+    var itemWidth = parseInt(bounds.width) + ((r * 2) + (1.75 * r)) + ((1.75 * r) - r);
+    var biggerHeight = Math.max(itemheight, (r*2));
+    item.attr("transform", (d,ii) => "translate(0," + currLegendHeight + ")");
+    var legendItemHeight = (biggerHeight + (r / 2) + (2 * this.textBorderPadding));
+    item.select("circle").attr("cy", r)
+      .attr("cx", (1.75*r))
+      .attr("cy", ((biggerHeight + (2 * this.textBorderPadding)) / 2));
+
+    var lineHeight = itemheight / lines;
+    var y = ((biggerHeight / 2) / lines) + this.textBorderPadding;
+    text
+      .attr("y", 0)
+      .attr("transform", "translate(0," + ((biggerHeight / 2) + (lineHeight / 2) - ((lines - 1) * (lineHeight / 2))) + ')')
+      .attr("dy", 0);
+
+    this.wrap(text.node(), svgWidth - (1.75*r) - (4 * r) - (1.75 * r) - (2 * this.textBorderPadding) - 1, d.frequency + " " + d.label);
+    return legendItemHeight;
+  }
+
+  updateChart() {
+    let r = ((this.width / this.itemsPerRow) / this.iconPadding);
+    let rowHeight = (r * 2) + (6 * r);
+    let numRows = Math.ceil(100 / this.itemsPerRow);
+
+    let totalLegendHeight = this.updateExistingLegendItems(r);
+
+    let vertPadding = 10;
+    let height = (numRows * rowHeight) + totalLegendHeight + vertPadding;
+
+    this.canvas
+      .attr("width", this.width + "px")
+      .attr("height", height + "px");
+
+    this.people.attr("transform", (d, i) => {
+      let col = i % this.itemsPerRow;
+      let row = Math.floor(i / this.itemsPerRow );
+      return("translate("+((1.75*r)+(col*((this.iconPadding*r))))+","+(totalLegendHeight + (1.75*r)+((row*(8*r))))+")");
+    });
+
+    this.people.each((d, i, all) => {
+      //console.log(all);
+      //d3.select(this);
+      let me = this.people[0][i];
+      this.drawPerson(r, me, d.color);
+    });
+
+    this.updateExistingItems();
+
+    this.peopleItems.exit().remove();
+  }
+
+  // ngOnChanges() {
+  //   if (this.chart) this.updateChart();
+  // }
+
+  // sets up local vars
+  ngOnInit() {
+    //this.initArrayItems();
+    this.drawChart();
+  }
+
+}

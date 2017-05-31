@@ -1,3 +1,69 @@
-<h1>
-  {{title}}
-</h1>
+<navbar></navbar>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6">
+      <h4>General Settings</h4>
+      <div class="form">
+        <div class="row">
+          <div class="half-space-bottom col-sm-6">
+            <label>Icons per row: </label>
+            <input [(ngModel)]="iconsPerRow" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
+          </div>
+          <div class="half-space-bottom col-sm-6">
+            <label>Image width: </label>
+            <input [(ngModel)]="imageWidth" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="half-space-bottom col-sm-6">
+            <label>Icon padding: </label>
+            <input [(ngModel)]="iconPadding" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <h4>Data Settings</h4>
+      <ul class="nav nav-tabs space-bottom">
+        <li [class.active]="point === currSelected" class="nav-item" *ngFor="let point of dataPoints; let i = index">
+          <a class="nav-link" href="#" (click)="changeSelected(point)"><i class="fa fa-user" [style.color]="point.color"></i></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="addDataPoint()"><i class="fa fa-plus text-info"></i></a>
+        </li>
+      </ul>
+
+      <div>
+        <div class="half-space-bottom">
+          <div>
+            <div class="row">
+              <div class="col-sm-6">
+                <label>Color</label>
+                <div class="half-space-bottom">
+                  <input class="form-control" [(colorPicker)]="currSelected.color" [style.background]="currSelected.color" (colorPickerChange)="dataChanged()" />
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <label>Frequency</label>
+                <div class="half-space-bottom">
+                  <input (keyup)="($event.keyCode === 13 ? dataChanged() : null)" (blur)="dataChanged()" class="form-control half-space-right" [(ngModel)]="currSelected.frequency" [disabled]="!currSelected.editable" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label>Label</label>
+              <div class="input-group">
+                <span class="input-group-addon">{{currSelected.frequency}}</span>
+                <input (keyup)="($event.keyCode === 13 ? dataChanged() : null)" (blur)="dataChanged()" [(ngModel)]="currSelected.label" class="form-control"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <h4>Live Preview</h4>
+    <app-icon-array-chart [itemsPerRow]="iconsPerRow" [width]="imageWidth" [data]="dataPoints" [iconPadding]="iconPadding" #IconArrayChart></app-icon-array-chart>
+  </div>
+</div>
