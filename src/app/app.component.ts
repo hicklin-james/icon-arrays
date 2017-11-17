@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, NgZone } from '@angular/core';
 import { IconArrayChartComponent } from './directives/icon-array-chart/icon-array-chart.component'
 
 @Component({
@@ -8,6 +8,9 @@ import { IconArrayChartComponent } from './directives/icon-array-chart/icon-arra
 })
 
 export class AppComponent {
+
+  constructor(private _ngZone: NgZone) {}
+
   iconsPerRow: number = 25;
   imageWidth: number = 800;
   iconPadding: number = 3.5;
@@ -15,6 +18,7 @@ export class AppComponent {
   defaultColors: string[] = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', 
    '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'];
   chartTitle: string = "Title for your icon array";
+  downloadWasRequested: boolean = false;
   dataPoints: any = [
     {
       frequency: 15,
@@ -70,5 +74,23 @@ export class AppComponent {
     let diff = 100 - dataSum;
     this.dataPoints[this.dataPoints.length-1].frequency = diff;
     this.iconArrayChart.updateData();
+  }
+
+  removeCurrentDataPoint() {
+    let index = this.dataPoints.indexOf(this.currSelected);
+    let last = this.dataPoints[this.dataPoints.length-1];
+    last.frequency += this.currSelected.frequency;
+    this.currSelected = this.dataPoints[index+1];
+    // give existing data to last element
+    this.dataPoints.splice(index, 1);
+    this.iconArrayChart.updateData();
+  }
+
+  downloadRequest() {
+    this.downloadWasRequested = true;
+  }
+
+  downloadFinish() {
+    this._ngZone.run(() => this.downloadWasRequested = false);
   }
 }

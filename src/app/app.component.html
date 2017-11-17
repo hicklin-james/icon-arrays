@@ -1,8 +1,9 @@
 <navbar></navbar>
-<div class="container">
-  <div class="row">
+<div class="container space-bottom space-top">
+  <div class="row clearfix space-bottom">
     <div class="col-sm-6">
-      <h4>General Settings</h4>
+      <h5>General Settings</h5>
+      <hr />
       <div class="form">
         <div class="row">
           <div class="half-space-bottom col-sm-6">
@@ -10,7 +11,7 @@
             <input [(ngModel)]="iconsPerRow" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
           </div>
           <div class="half-space-bottom col-sm-6">
-            <label>Image width: </label>
+            <label>Image width (px): </label>
             <input [(ngModel)]="imageWidth" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
           </div>
         </div>
@@ -20,14 +21,14 @@
             <input [(ngModel)]="iconPadding" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
           </div>
           <div class="half-space-bottom col-sm-6">
-            <label>Randomly assign colors: </label>
+            <label>Randomly assign items: </label>
             <div>
               <div class="fa fa-2x clickable" [class.fa-square-o]="!randomDistribution" [class.fa-check-square-o]="randomDistribution" [class.text-success]="randomDistribution" (click)="setRandomDistribution()"></div>
             </div>
           </div>
         </div>
         <div class="row">
-          <div class="half-space-bottom col-sm-6">
+          <div class="half-space-bottom col-sm-12">
             <label>Chart Title: </label>
             <input [(ngModel)]="chartTitle" (keyup)="($event.keyCode === 13 ? inputBlurred() : null)" (blur)="inputBlurred()" class="form-control" />
           </div>
@@ -35,12 +36,13 @@
       </div>
     </div>
     <div class="col-sm-6">
-      <h4>Data Settings</h4>
+      <h5>Data Settings</h5>
+      <hr />
       <ul class="nav nav-tabs space-bottom">
-        <li [class.active]="point === currSelected" class="nav-item" *ngFor="let point of dataPoints; let i = index">
-          <a class="nav-link" href="#" (click)="changeSelected(point)"><i class="fa fa-user" [style.color]="point.color"></i></a>
+        <li class="nav-item" *ngFor="let point of dataPoints; let i = index">
+          <a [class.active]="point === currSelected" class="nav-link" href="#" (click)="changeSelected(point)"><i class="fa fa-user" [style.color]="point.color"></i></a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" ngbTooltip="Add another data point">
           <a class="nav-link" href="#" (click)="addDataPoint()"><i class="fa fa-plus text-info"></i></a>
         </li>
       </ul>
@@ -48,6 +50,11 @@
       <div>
         <div class="half-space-bottom">
           <div>
+            <div class="clearfix">
+              <div class="pull-right" ngbTooltip="Delete this item" placement="left">
+                <button type="button" (click)="removeCurrentDataPoint()" href="#" [disabled]="!currSelected.editable" class="btn btn-white" [ngClass]="{'clickable': currSelected.editable}"><i class="fa fa-trash text-danger"></i></button>
+              </div>
+            </div>
             <div class="row">
               <div class="col-sm-6">
                 <label>Color:</label>
@@ -75,8 +82,16 @@
     </div>
   </div>
   <div>
-    <h4>Live Preview</h4>
-    <app-icon-array-chart [itemsPerRow]="iconsPerRow" [width]="imageWidth" [data]="dataPoints" [iconPadding]="iconPadding" [randomDistribution]="randomDistribution" [chartTitle]="chartTitle" #IconArrayChart></app-icon-array-chart>
+    <h5>Live Preview</h5>
+    <hr />
+    <div>
+      <app-icon-array-chart [itemsPerRow]="iconsPerRow" [width]="imageWidth" [data]="dataPoints" [iconPadding]="iconPadding" [randomDistribution]="randomDistribution" [chartTitle]="chartTitle" (downloadRequested)="downloadRequest()" [downloadWasRequested]="downloadWasRequested" #IconArrayChart></app-icon-array-chart>
+      <div *ngIf="downloadWasRequested" class="way-offscreen">
+        <div class="way-offscreen-inner">
+          <app-icon-array-chart [itemsPerRow]="iconsPerRow" [width]="imageWidth" [data]="dataPoints" [iconPadding]="iconPadding" [randomDistribution]="randomDistribution" [chartTitle]="chartTitle" [downloadImmediately]="true" (downloadFinished)="downloadFinish()" #IconArrayChart></app-icon-array-chart>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <nav class="footer navbar-fixed-bottom">

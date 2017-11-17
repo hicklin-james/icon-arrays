@@ -1,4 +1,19 @@
-<div class="space-bottom well" style="background-color: white;">
-  <svg class="space-bottom" id="icon-array-preview" style="display: block; margin: auto; background-color: white;"></svg>
+<div class="space-bottom">
+  <div [hidden]="!sizeok" class="alert alert-info text-center">
+    Your icon array will look exactly like the preview below.
+  </div>
+  <div [hidden]="sizeok" class="alert alert-warning text-center">
+    Your icon array will be larger than the preview due to lack of available screen space.
+  </div>
+  <div class="well">
+    <div class="well-inner" (window:resize)="onResize($event)">
+      <svg class="space-bottom" id="icon-array-preview" style="display: block; margin: auto; background-color: white;"></svg>
+    </div>
+  </div>
 </div>
-<button class="btn btn-primary" (click)="downloadChart()"><i class="fa fa-fw fa-cloud-download"></i> Download Your Icon Array</button>
+<div class="text-center">
+  <button class="btn btn-primary half-space-bottom" (click)="downloadChartPushed()" [disabled]="downloadWasRequested" [class.clickable]="!downloadWasRequested"><i class="fa fa-fw fa-cloud-download"></i> Download Your Icon Array</button>
+  <div style="height: 24px;">
+    <span *ngIf="downloadWasRequested" class="text-success"><i class="fa fa-refresh fa-spin fa-lg"></i> Preparing your icon array...</span>
+  </div>
+</div>

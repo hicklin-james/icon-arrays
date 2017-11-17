@@ -1,10 +1,13 @@
 body {
-  margin-top: 60px;
-  margin-bottom: 60px;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .space-bottom {
   margin-bottom: 20px;
+}
+
+.space-top {
+  margin-top: 20px;
 }
 
 .half-space-bottom {
@@ -65,4 +68,35 @@ body {
   background: #f8f8f8;
   border-top: 1px solid;
   border-color: #e7e7e7;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.btn-white {
+  background: white;
+  border: 1px solid lightgrey;
+}
+
+.well {
+  background-color: #f7f7f7;
+  padding: 20px;
+  border-radius: 5px;
+  border: 1px solid grey;
+}
+
+.well-inner {
+  background-color: white;
+}
+
+.way-offscreen {
+  position: relative;
+  overflow: hidden;
+}
+
+.way-offscreen-inner {
+  position: absolute;
+  width: 10000px;
+  left: -100000px;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Inject, ViewContainerRef } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, Inject, ViewContainerRef } from '@angular/core';
 import * as d3 from 'd3';
 import * as FileSaver from 'file-saver';
 
@@ -10,6 +10,9 @@ import * as FileSaver from 'file-saver';
 
 export class IconArrayChartComponent implements OnInit {
 
+  @Output() downloadRequested:EventEmitter<any> = new EventEmitter();
+  @Output() downloadFinished:EventEmitter<any> = new EventEmitter();
+
   @Input() name: string;
   @Input() itemsPerRow: number;
   @Input() width: number;
@@ -17,6 +20,9 @@ export class IconArrayChartComponent implements OnInit {
   @Input() iconPadding: number;
   @Input() randomDistribution: boolean;
   @Input() chartTitle: string;
+  @Input() downloadImmediately: boolean;
+  @Input() downloadWasRequested: boolean;
+
   height: number;
   canvas: any;
   chart: any;
@@ -24,12 +30,17 @@ export class IconArrayChartComponent implements OnInit {
   legendItems: any;
   legendElements: any;
   textBorderPadding: number = 3;
-  titleHeight: number = 40;
+  titleHeight: number;
+  sizeok: boolean;
 
   title: any;
   people: any;
   peopleItems: any;
   chartData: any[] = Array();
+  wrapper: any;
+  actualWidth: number;
+  titlePadding: number = 20;
+  titleLowerPadding: number = 10;
 
   constructor(private viewContainerRef: ViewContainerRef) { }
 
@@ -180,8 +191,8 @@ export class IconArrayChartComponent implements OnInit {
 
   // draws initial chart - note that this is only called once
   drawChart() {
-    let wrapper = d3.select(this.viewContainerRef.element.nativeElement);
-    this.canvas = wrapper.select('#icon-array-preview')
+    this.wrapper = d3.select(this.viewContainerRef.element.nativeElement).select(".well-inner");
+    this.canvas = this.wrapper.select('#icon-array-preview')
     this.chart = this.canvas.append("g").attr("class", 'chart-body');
 
     this.title = this.canvas.append("text")
@@ -218,15 +229,8 @@ export class IconArrayChartComponent implements OnInit {
   }
 
   modifyDataWithDistribution() {
-    //var counters = this.data.map((p) => { return p.frequency});
-    //counters.slice(-1);
-    //var def = this.data[this.data.length-1];
 
     var clonedArray = Array.apply(null, {length: 100}).map(Number.call, Number)
-
-    // for (var k = 0; k < 100; k++) {
-    //   clonedArray[k].color = def.color;
-    // }
 
     var s = 0;
 
@@ -290,21 +294,20 @@ export class IconArrayChartComponent implements OnInit {
   }
 
   updateData() {
-     // var unflattenedData = this.data.map((outerData) => {return this.chunkData(outerData)});
-     // this.chartData = [].concat.apply([], unflattenedData);
-     // this.peopleItems = this.people.data(this.chartData, (d) => {return d.key});
     this.modifyExistingData();
 
     this.legendItems = this.legend.selectAll("g")
       .data(this.data, (d, i) => {return i});
 
     this.legendElements = this.legendItems.enter()
-      .append("g")
+      .append("g");
 
     this.legendElements.append("circle");
     this.legendElements.append("text")
       .attr('alignment-baseline', 'middle')
       .style("font-size", "0.9em");
+
+    this.legendItems.exit().remove();  
 
     this.updateChart();
   }
@@ -343,7 +346,7 @@ export class IconArrayChartComponent implements OnInit {
     this.legendItems
       .each((d,i) => {
         var textItem = d3.select(this.legendItems[0][i])
-        totalLegendHeight += this.updateLegendItem(textItem, totalLegendHeight, this.width, r, d)
+        totalLegendHeight += this.updateLegendItem(textItem, totalLegendHeight, this.actualWidth, r, d)
       });
 
     this.legendItems.select("circle")
@@ -382,7 +385,41 @@ export class IconArrayChartComponent implements OnInit {
   }
 
   updateChart() {
-    let r = ((this.width / this.itemsPerRow) / this.iconPadding);
+    //let divWidth = d3.select(this.viewContainerRef.element.nativeElement).node()
+    let divWidth = this.wrapper.node().getBoundingClientRect().width;
+    if (divWidth > this.width) {
+      this.actualWidth = this.width;
+      this.sizeok = true;
+    } else {
+      this.actualWidth = divWidth;
+      this.sizeok = false;
+    }
+
+    this.title.text(this.chartTitle)
+      .attr("y", 0)
+      .attr("dy", 0)
+      .attr("x", 0)
+      .attr("stroke", "black")
+      .attr("stroke-width", "1px")
+      .attr("text-anchor", "middle")
+      .attr("transform", (d, i) => {
+        return "translate(" + String(this.actualWidth / 2) + "," + String(this.titlePadding) + ")";
+      });
+
+    let lineheight = this.title.node().getBBox().height;
+
+    let trows = this.wrap(this.title.node(), this.actualWidth, this.chartTitle);
+    this.titleHeight = (trows * lineheight) + this.titleLowerPadding;
+
+    // this.title.text(this.chartTitle)
+    //   .attr("stroke", "black")
+    //   .attr("stroke-width", "1px")
+    //   .attr("transform", (d, i) => {
+    //     return "translate(" + ((this.actualWidth / 2) - (this.title.node().getComputedTextLength() / 2)) + "," + (this.titleHeight / 2) + ")";
+    //   });
+
+    //console.log(actualWidth);
+    let r = ((this.actualWidth / this.itemsPerRow) / this.iconPadding);
     let rowHeight = (r * 2) + (6 * r);
     let numRows = Math.ceil(100 / this.itemsPerRow);
 
@@ -392,15 +429,8 @@ export class IconArrayChartComponent implements OnInit {
     let height = (numRows * rowHeight) + totalLegendHeight + vertPadding;
     this.height = height;
 
-    this.title.text(this.chartTitle)
-      .attr("stroke", "black")
-      .attr("stroke-width", "1px")
-      .attr("transform", (d, i) => {
-        return "translate(" + ((this.width / 2) - (this.title.node().getComputedTextLength() / 2)) + "," + (this.titleHeight / 2) + ")";
-      });
-
     this.canvas
-      .attr("width", this.width + "px")
+      .attr("width", this.actualWidth + "px")
       .attr("height", height + "px");
 
     this.people.attr("transform", (d, i) => {
@@ -423,6 +453,12 @@ export class IconArrayChartComponent implements OnInit {
 
   ngOnInit() {
     this.drawChart();
+    this.updateData();
+    if (this.downloadImmediately) {
+      setTimeout(() => {
+        this.downloadChart();
+      }, 3000);
+    }
   }
 
   getSvgString() {
@@ -456,8 +492,17 @@ export class IconArrayChartComponent implements OnInit {
   downloadChart() {
     var saveCallback = (datablob, filesize) => {
       FileSaver.saveAs( datablob, 'D3 vis exported to PNG.png' );
+      this.downloadFinished.emit();
     }
 
     this.downloadChartHelper(saveCallback);
+  }
+
+  downloadChartPushed() {
+    this.downloadRequested.emit();
+  }
+
+  onResize($event) {
+    this.updateChart();
   }
 }
